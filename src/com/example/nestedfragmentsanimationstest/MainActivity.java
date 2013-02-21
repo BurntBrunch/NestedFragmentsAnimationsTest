@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -46,14 +47,24 @@ public class MainActivity extends FragmentActivity {
 	}
 	
 	public static class FragmentA extends Fragment{
+		private FragmentA1 a1;
+		private FragmentA2 a2;
+
 		@Override
 		public void onCreate(Bundle savedInstanceState) {
 			super.onCreate(savedInstanceState);
 			
-			getChildFragmentManager()
-				.beginTransaction()
-				.add(android.R.id.list, new FragmentA1())
-				.add(android.R.id.list, new FragmentA2())
+			a1 = new FragmentA1();
+			a2 = new FragmentA2();
+			
+			FragmentTransaction ft = 
+					getChildFragmentManager()
+						.beginTransaction();
+			if(savedInstanceState == null)
+				ft
+					.add(android.R.id.list, a1, "tag1")
+					.add(android.R.id.list, a2, "tag2");
+			ft
 				.commit();
 		}
 		
@@ -67,6 +78,13 @@ public class MainActivity extends FragmentActivity {
 			layout.setId(android.R.id.list);
 			
 			return layout;
+		}
+		
+		public void removeChildren(FragmentTransaction ft) {
+			ft
+				.setCustomAnimations(R.anim.zero_anim, R.anim.zero_anim, R.anim.zero_anim, R.anim.zero_anim)
+				.remove(a1)
+				.remove(a2);
 		}
 	}
 	
@@ -88,7 +106,7 @@ public class MainActivity extends FragmentActivity {
 		setContentView(R.layout.activity_main);
 		
 		getSupportFragmentManager().beginTransaction()
-			.replace(android.R.id.content, new FragmentA())
+			.replace(android.R.id.content, new FragmentA(), "fragment_a")
 			.commit();
 		
 		FragmentManager.enableDebugLogging(true);
@@ -102,11 +120,18 @@ public class MainActivity extends FragmentActivity {
 	}
 	
 	private void changeFragment() {
-		getSupportFragmentManager()
+		FragmentManager fm = getSupportFragmentManager();
+		FragmentTransaction trans = fm
 			.beginTransaction()
+			.addToBackStack(null);
+		
+		if(fm.findFragmentByTag("fragment_a") != null &&
+				fm.findFragmentByTag("fragment_a").isVisible())
+			((FragmentA) fm.findFragmentByTag("fragment_a")).removeChildren(trans);
+		
+		trans
 			.setCustomAnimations(R.anim.in_from_right, R.anim.out_to_left, 
-					R.anim.in_from_left, R.anim.out_to_right)
-			.addToBackStack(null)
+				R.anim.in_from_left, R.anim.out_to_right)
 			.replace(android.R.id.content, new FragmentB())
 			.commit();
 	}
